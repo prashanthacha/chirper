@@ -26,6 +26,10 @@
   <main class="flex-grow flex justify-center items-center">
     {{ $slot}}
   </main>
+  <div>
+    Powered by Chirper
+  </div>
+
 
   <!-- Footer -->
   <footer class="bg-white border-t border-gray-200 text-center py-4 text-gray-600 text-sm">
