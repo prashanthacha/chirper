@@ -9,21 +9,28 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     libonig-dev \
     libzip-dev \
-    zip \
-    && docker-php-ext-install pdo_pgsql pgsql mbstring zip
+    zip
 
-# Install Composer
+# Install PHP extensions (PostgreSQL + Laravel requirements)
+RUN docker-php-ext-install pdo_pgsql pgsql mbstring zip
+
+# Install Composer inside container
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Set working directory
 WORKDIR /var/www
 
-# Copy app files
+# Copy app source code
 COPY . .
 
-# Install PHP dependencies
+# Install Laravel vendor dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Clear Laravel caches
+# Fix permissions so Laravel can write logs, cache, views, sessions
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+# Clear cached Laravel config, views, routes
 RUN php artisan config:clear && \
     php artisan route:clear && \
     php artisan view:clear
@@ -34,5 +41,5 @@ COPY nginx.conf /etc/nginx/sites-enabled/default
 # Expose Render port
 EXPOSE 80
 
-# Run migrations automatically and start services
+# Start Laravel migrations, Nginx & PHP-FPM together
 CMD php artisan migrate --force && service nginx start && php-fpm
